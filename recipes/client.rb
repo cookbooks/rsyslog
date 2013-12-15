@@ -19,8 +19,15 @@
 
 include_recipe "rsyslog"
 
-if Chef::Config[:solo]
-  Chef::Log.info("The rsyslog::client recipe uses search. Chef Solo does not support search.")
+def chef_solo_search_installed?
+  klass = ::Search::const_get('Helper')
+  return klass.is_a?(Class)
+rescue NameError
+  return false
+end
+
+if Chef::Config[:solo] and not chef_solo_search_installed?
+  Chef::Log.info("The rsyslog::client recipe uses search. Chef Solo does not support search unless you install the chef-solo-search cookbook.")
 elsif !node.run_list.roles.include?(node['rsyslog']['server_role'])
   Chef::Log.debug("Searching for an rsyslog server with the role #{node['rsyslog']['server_role']}")
   rsyslog_server = search(:node, "roles:#{node['rsyslog']['server_role']}")
